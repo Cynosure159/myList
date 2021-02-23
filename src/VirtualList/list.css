@@ -1,0 +1,10 @@
+.virtual-list {
+	box-sizing: border-box;
+	overflow: auto;
+	position: relative;
+}
+
+.virtual-list-item {
+	box-sizing: border-box;
+	width: 100%;
+}
