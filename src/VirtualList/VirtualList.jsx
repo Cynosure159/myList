@@ -4,15 +4,18 @@ import "./list.css";
 export default function VirtualList(props) {
 	const listRef = useRef();
 	const startRef = useRef();
+	const endRef = useRef();
 
 	const [displayState, setDisplayState] = useState([]);
 	const [topState, setTopState] = useState(0);
 	const [buttonState, setButtonState] = useState(0);
 
 	useEffect(() => {
-		setDisplayState(Array(props.data.length).fill(false));
-		handleScroll();
-	}, []);
+		if (props.data.length > 0) {
+			setDisplayState(Array(props.data.length).fill(false));
+			handleScroll();
+		}
+	}, [props]);
 
 	function handleScroll() {
 		let offsetTop =
@@ -36,6 +39,16 @@ export default function VirtualList(props) {
 		);
 		setTopState(topNumber * props.itemHeight);
 		setButtonState(buttonNum * props.itemHeight);
+
+		// 如果不是正在加载中 且滚到底部 则回调获取数据
+		if (
+			!props.loading &&
+			endRef.current.getClientRects()[0].y -
+				listRef.current.getClientRects()[0].y -
+				props.height <=
+				0
+		)
+			props.getMoreData();
 	}
 
 	return (
@@ -81,6 +94,9 @@ export default function VirtualList(props) {
 					height: buttonState + "px",
 				}}
 			/>
+
+			{/* 加載更多 */}
+			{props.getMoreData ? <div ref={endRef}>正在加載...</div> : null}
 		</div>
 	);
 }
