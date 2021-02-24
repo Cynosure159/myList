@@ -1,0 +1,14 @@
+.custom-list-item {
+	display: flex;
+	justify-content: space-between;
+	margin: 10px 20px 10px 20px;
+	align-items: center;
+	box-shadow: 1px 1px 20px #888888;
+	padding: 10px;
+}
+
+.custom-list-item-img {
+	width: 80px;
+	height: 80px;
+	border-radius: 50%;
+}

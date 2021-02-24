@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import {
+	forwardRef,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
 import "./list.css";
 
-export default function VirtualList(props) {
+const VirtualList = forwardRef((props, ref) => {
 	const listRef = useRef();
 	const startRef = useRef();
 	const endRef = useRef();
@@ -13,9 +19,17 @@ export default function VirtualList(props) {
 	useEffect(() => {
 		if (props.data.length > 0) {
 			setDisplayState(Array(props.data.length).fill(false));
-			handleScroll();
 		}
+		handleScroll();
 	}, [props]);
+
+	useImperativeHandle(ref, () => ({
+		refresh: refresh,
+	}));
+
+	function refresh() {
+		handleScroll();
+	}
 
 	function handleScroll() {
 		let offsetTop =
@@ -27,9 +41,9 @@ export default function VirtualList(props) {
 		let showNum =
 			Math.ceil(props.height / props.itemHeight) +
 			2 * props.overscanRowCount;
-		if (topNumber + showNum > props.data.length)
-			topNumber = props.data.length - showNum;
-		let buttonNum = props.data.length - showNum - topNumber;
+		let buttonNum;
+		if (topNumber + showNum > props.data.length) buttonNum = 0;
+		else buttonNum = props.data.length - showNum - topNumber;
 		// console.log(topNumber, showNum, buttonNum);
 		setDisplayState(
 			Array(topNumber)
@@ -40,23 +54,26 @@ export default function VirtualList(props) {
 		setTopState(topNumber * props.itemHeight);
 		setButtonState(buttonNum * props.itemHeight);
 
-		// 如果不是正在加载中 且滚到底部 则回调获取数据
-		if (
-			!props.loading &&
-			endRef.current.getClientRects()[0].y -
-				listRef.current.getClientRects()[0].y -
-				props.height <=
-				0
-		)
-			props.getMoreData();
+		if (props.hasMoreData) {
+			// 如果不是正在加载中 且滚到底部 则回调获取数据
+			if (
+				!props.loading &&
+				endRef.current.getClientRects()[0].y -
+					listRef.current.getClientRects()[0].y -
+					props.height <=
+					0
+			)
+				props.getMoreData();
+		} else {
+		}
 	}
 
 	return (
 		<div
 			className="virtual-list"
 			style={{
-				height: props.height + "px",
-				width: props.width + "px",
+				height: props.height ? props.height + "px" : "500px",
+				width: props.width ? props.width + "px" : "300px",
 				backgroundColor: props.backgroundColor || "#ffffff",
 				border: props.border || "solid 1px black",
 			}}
@@ -78,12 +95,14 @@ export default function VirtualList(props) {
 						className="virtual-list-item"
 						key={index}
 						style={{
-							height: props.itemHeight + "px",
+							height: props.itemHeight
+								? props.itemHeight + "px"
+								: "40px",
 							border: props.itemBorder || "solid 1px black",
 							// display: displayState[index] ? "block" : "none",
 						}}
 					>
-						{props.model(item)}
+						{props.model(item, index)}
 					</div>
 				) : null
 			)}
@@ -96,7 +115,19 @@ export default function VirtualList(props) {
 			/>
 
 			{/* 加載更多 */}
-			{props.getMoreData ? <div ref={endRef}>正在加載...</div> : null}
+			{props.hasMoreData ? (
+				<div ref={endRef}> {props.loadingBlock || "正在加載..."}</div>
+			) : null}
 		</div>
 	);
-}
+});
+
+VirtualList.defaultProps = {
+	width: 300,
+	height: 500,
+	itemHeight: 40,
+	overscanRowCount: 2,
+	border: "solid 1px black",
+};
+
+export default VirtualList;
